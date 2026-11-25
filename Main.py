@@ -3,22 +3,20 @@ import pandas as pd
 
 portfolios = {}
 
-
 def check_trade(trade):
 
     # Step 1: Validate trade data
-
     try:
-        quantity = float(trade["quantity"])
-        price = float(trade["price"])
+        quantity = int(trade["quantity"])
+        price = int(trade["price"])
         action = str(trade["action"]).strip().capitalize()
-
     except (ValueError, TypeError):
         return "Rejected", "Invalid trade data."
 
     if quantity <= 0 or price <= 0 or action not in ["Buy", "Sell"]:
         return "Rejected", "Invalid trade data."
 
+    # Step 2: Restricted security check
     portfolio_id = trade["portfolio_id"]
     security_id = trade["security_id"]
 
@@ -32,25 +30,20 @@ def check_trade(trade):
     max_position = portfolio["max_position_pct"]
     holdings = portfolio["current_holdings"]
 
-    # Step 2: Restricted security check
-
     if security_id in restricted:
         return "Rejected", "Security is restricted for this portfolio."
 
+    # Step 3: Sell check
     existing_quantity = 0
-
     for holding in holdings:
         if holding[0] == security_id:
             existing_quantity += holding[1]
-
-    # Step 3: Sell check
 
     if action == "Sell":
         if existing_quantity < quantity:
             return "Rejected", "Insufficient holdings to sell."
 
     # Step 4: Buy affordability check
-
     if action == "Buy":
 
         trade_value = quantity * price
@@ -97,13 +90,11 @@ def check_trade(trade):
 
 
 def main():
-
-    input_file = "proposed_trades.csv"
+    input_file = "trades_test.csv"
     output_file = "trade_compliance_results.csv"
 
     try:
         trades = pd.read_csv(input_file)
-
         required_columns = [
             "portfolio_id",
             "security_id",
